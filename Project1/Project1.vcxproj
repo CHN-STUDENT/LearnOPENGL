@@ -72,10 +72,6 @@
     <IncludePath>C:\Users\Mr.Guo\Desktop\glfd\include;C:\Users\Mr.Guo\Desktop\cglm\cglm\include;C:\Users\Mr.Guo\Desktop\glfw\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Mr.Guo\Desktop\glfw\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>.\cglm\include;.\glfw\include;.\glfd\include;$(IncludePath)</IncludePath>
-    <LibraryPath>.\cglm\lib;.\glfw\lib;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -121,11 +117,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cglmtest.cpp" />
-    <ClCompile Include="glfd\src\glad.c" />
+    <ClCompile Include="..\..\glfd\src\glad.c" />
+    <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="shader.h" />
     <ClInclude Include="shader_c.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>

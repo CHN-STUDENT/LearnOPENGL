@@ -1,5 +1,6 @@
-#ifndef SHADER_C_H
+ï»¿#ifndef SHADER_C_H
 #define SHADER_C_H
+
 
 #include <glad\glad.h>
 #include <stdlib.h>
@@ -11,8 +12,8 @@ void checkCompileErrors(unsigned int shader, char * type);
 
 void Shader(const char* vertexPath, const char* fragmentPath)
 {
-	char * vShaderCode;//¶ÁÈ¡µÄ×Ö·ûÖ¸Õë
-	char * fShaderCode;//¶ÁÈ¡µÄ×Ö·ûÖ¸Õë
+	char * vShaderCode;//è¯»å–çš„å­—ç¬¦æŒ‡é’ˆ
+	char * fShaderCode;//è¯»å–çš„å­—ç¬¦æŒ‡é’ˆ
 	
 	FILE * pVertex;
 	FILE * pFragment;
@@ -71,13 +72,13 @@ void use()
 {
 	glUseProgram(ID);
 }
-// utility uniform functions
+ //utility uniform functions
 // ------------------------------------------------------------------------
-void setBool(const char * name, bool value) 
-{
-	glUniform1i(glGetUniformLocation(ID, name), (int)value);
-}
-// ------------------------------------------------------------------------
+//void setBool(const char * name, bool value) 
+//{
+//	glUniform1i(glGetUniformLocation(ID, name), (int)value);
+//}
+ //------------------------------------------------------------------------
 void setInt(const char * name, int value) 
 {
 	glUniform1i(glGetUniformLocation(ID, name), value);
@@ -89,7 +90,7 @@ void setFloat(const char * name, float value)
 }
 
 void checkCompileErrors(unsigned int shader, char * type)
-{//¼ì²é×ÅÉ«Æ÷±àÒëÊÇ·ñÓĞ´íÎó
+{//æ£€æŸ¥ç€è‰²å™¨ç¼–è¯‘æ˜¯å¦æœ‰é”™è¯¯
 	int success;
 	char infoLog[1024];
 	if (strcmp(type,"PROGRAM")!=0 )
