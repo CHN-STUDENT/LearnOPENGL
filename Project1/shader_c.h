@@ -1,20 +1,23 @@
 ﻿#ifndef SHADER_C_H
 #define SHADER_C_H
 
+/*原版C++:https://learnopengl.com/code_viewer_gh.php?code=includes/learnopengl/shader.h
+此版本修改于原版为了适应无法用C++的必要*/
 
 #include <glad\glad.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <cglm\cglm.h>
+//使用CGLM替代GLM库为了适应无法用C++的必要
 
 unsigned int ID;
 void checkCompileErrors(unsigned int shader, char * type);
 
 void Shader(const char* vertexPath, const char* fragmentPath)
-{
+{//着色器函数
 	char * vShaderCode;//读取的字符指针
 	char * fShaderCode;//读取的字符指针
-	
 	FILE * pVertex;
 	FILE * pFragment;
 	pVertex = fopen(vertexPath, "rb");
@@ -73,11 +76,11 @@ void use()
 	glUseProgram(ID);
 }
  //utility uniform functions
-// ------------------------------------------------------------------------
-//void setBool(const char * name, bool value) 
-//{
-//	glUniform1i(glGetUniformLocation(ID, name), (int)value);
-//}
+ //------------------------------------------------------------------------
+void setbool(const char * name, bool value) 
+{
+	glUniform1i(glGetUniformLocation(ID, name), (int)value);
+}
  //------------------------------------------------------------------------
 void setInt(const char * name, int value) 
 {
@@ -88,7 +91,51 @@ void setFloat(const char * name, float value)
 {
 	glUniform1f(glGetUniformLocation(ID, name), value);
 }
-
+// ------------------------------------------------------------------------
+//clgm库没有因此注释掉
+//void setVec2(const char * name,vec2 &value) 
+//{
+//	glUniform2fv(glGetUniformLocation(ID, name), 1, &value[0]);
+//}
+void setVec2(const char * name, float x, float y)
+{
+	glUniform2f(glGetUniformLocation(ID, name), x, y);
+}
+// ------------------------------------------------------------------------
+void setVec3(const char * name, vec3 value) 
+{
+	glUniform3fv(glGetUniformLocation(ID, name), 1, &value[0]);
+}
+void setVec3_2(const char * name, float x, float y, float z)
+{
+	glUniform3f(glGetUniformLocation(ID, name), x, y, z);
+}
+// ------------------------------------------------------------------------
+void setVec4(const char * name, vec4 value) 
+{
+	glUniform4fv(glGetUniformLocation(ID, name), 1, &value[0]);
+}
+void setVec4_2(const char * name, float x, float y, float z, float w)
+{
+	glUniform4f(glGetUniformLocation(ID, name), x, y, z, w);
+}
+// ------------------------------------------------------------------------
+//clgm库没有因此注释掉
+//void setMat2(const char * name, mat2 &mat) 
+//{
+//	glUniformMatrix2fv(glGetUniformLocation(ID, name), 1, GL_FALSE, &mat[0][0]);
+//}
+// ------------------------------------------------------------------------
+void setMat3(const char * name, mat3 mat)
+{
+	glUniformMatrix3fv(glGetUniformLocation(ID, name), 1, GL_FALSE, mat[0]);
+}
+// ------------------------------------------------------------------------
+void setMat4(const char * name, mat4 mat)
+{
+	glUniformMatrix4fv(glGetUniformLocation(ID, name), 1, GL_FALSE, mat[0]);
+}
+// ------------------------------------------------------------------------
 void checkCompileErrors(unsigned int shader, char * type)
 {//检查着色器编译是否有错误
 	int success;
@@ -109,7 +156,6 @@ void checkCompileErrors(unsigned int shader, char * type)
 		{
 			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
 			printf("ERROR::PROGRAM_LINKING_ERROR of type: %s\n%s\n -- --------------------------------------------------- -- \n", type, infoLog);
-			//std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
 		}
 	}
 }

@@ -1,10 +1,9 @@
 ﻿#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "shader_c.h"
+#include "cam.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include <iostream>
-//#include "cglm.h"
 #include <cglm/cglm.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -13,13 +12,15 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);//鼠标反馈
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);//滚轮反馈
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+int SCR_WIDTH = 800;
+int SCR_HEIGHT = 600;
 
 // camera
-vec3 cameraPos = {0.0f, 0.0f, 3.0f};
-vec3 cameraFront = {0.0f, 0.0f, -1.0f};
-vec3 cameraUp = {0.0f, 1.0f, 0.0f};
+vec3 position = { 0.0f, 0.0f, 3.0f };
+vec3 up = { 0.0f, 1.0f, 0.0f };
+float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float pitch = 0.0f;
+
 
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
@@ -27,11 +28,11 @@ float lastFrame = 0.0f;
 
 //mouse
 bool firstMouse = true;
-float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
-float pitch = 0.0f;
-float lastX = 800.0f / 2.0;
-float lastY = 600.0 / 2.0;
-float fov = 45.0f;
+
+//camera
+float lastX = SCR_WIDTH / 2.0;
+float lastY = SCR_HEIGHT / 2.0;
+
 
 int main()
 {
@@ -42,12 +43,8 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
-#endif
-
-														 // glfw window creation
-														 // --------------------
+	// glfw window creation
+	// --------------------
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
 	if (window == NULL)
 	{
@@ -60,6 +57,7 @@ int main()
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//隐藏鼠标指针
 	// glad: load all OpenGL function pointers
 	// ---------------------------------------
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -219,11 +217,10 @@ int main()
 	glUniform1i(glGetUniformLocation(ID, "texture1"), 0);
 	//setInt("texture2", 1);
 	glUniform1i(glGetUniformLocation(ID, "texture2"), 1);
-	
-
-
 	// render loop
 	// -----------
+	Camera(position, up, yaw, pitch);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		float currentFrame = glfwGetTime();
@@ -245,28 +242,14 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
 		use();
+
 		mat4 view = GLM_MAT4_IDENTITY_INIT;//观察矩阵
-		//float radius = 10.f;
-		//float camX = sin(glfwGetTime()) * radius;
-		//float camZ = cos(glfwGetTime()) * radius;
-		//vec3 e = { camX,0.0f,camZ };//摄像机位置
-		//vec3 c = { 0.0f,0.0f,0.0f };//摄像机方向
-		//vec3 u = { 0.0f, 1.0f, 0.0f };//右轴？
-		vec3 add;
-		glm_vec_add(cameraPos, cameraFront, add);
-		glm_lookat(cameraPos, add, cameraUp, view);
-		unsigned int viewLoc = glGetUniformLocation(ID, "view");
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, view[0]);
-		////mat4 model=GLM_MAT4_IDENTITY_INIT;//模型矩阵
-		////vec3 m = { 0.5f, 1.0f, 0.0f };
-		////glm_rotate(model, (float)glfwGetTime(),m );
-		//vec3 v = { 0.0f, 0.0f, -3.0f };
-		//glm_translate(view, v);
-		mat4 projection = GLM_MAT4_IDENTITY_INIT;//投影矩阵
-		glm_perspective(glm_rad(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f,projection);
+		GetViewMatrix(view);
+		setMat4("view", view);
 		
-		// pass them to the shaders (3 different ways)
-		glUniformMatrix4fv(glGetUniformLocation(ID, "projection"), 1, GL_FALSE, projection[0]);
+		mat4 projection = GLM_MAT4_IDENTITY_INIT;//投影矩阵
+		glm_perspective(glm_rad(fov_back()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f,projection);
+		setMat4("projection", projection);
 		
 		glBindVertexArray(VAO);
 	
@@ -285,25 +268,6 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
-		
-
-		//mat4 trans = GLM_MAT4_IDENTITY_INIT;
-		//vec3 a = { 0.5f, -0.5f, 0.0f };
-		//vec3 b = { 0.0f, 0.0f, 1.0f };
-		//glm_translate(trans, a);
-		//glm_rotate(trans, (float)glfwGetTime(), b);
-		////glm_scale1(trans, 0.5f);
-		//
-		//// render the triangle
-		
-
-		//unsigned int transformLoc = glGetUniformLocation(ID, "transform");
-		//glUniformMatrix4fv(transformLoc, 1, GL_FALSE, trans[0]);
-		//glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-
-		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-		// -------------------------------------------------------------------------------	
-	
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -327,49 +291,15 @@ void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-	float cameraSpeed = 2.5 * deltaTime;
-	vec3 cam_speed = { cameraSpeed,cameraSpeed ,cameraSpeed };
-	vec3 temp,temp2;
+
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-	{ 
-		glm_vec_mulv(cam_speed,cameraFront,temp);
-		glm_vec_add(cameraPos,temp,cameraPos);
-		//cameraPos += cameraSpeed * cameraFront;
-	}
+		ProcessKeyboard("FORWARD", deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-	{
-		glm_vec_mulv(cam_speed, cameraFront, temp);
-		glm_vec_sub(cameraPos, temp, cameraPos);
-		//cameraPos -= cameraSpeed * cameraFront;
-	}
+		ProcessKeyboard("BACKWARD", deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-	{ 
-		glm_vec_cross(cameraFront, cameraUp, temp2);
-		glm_vec_normalize(temp2);
-		glm_vec_mulv(cam_speed, temp2, temp);
-		glm_vec_sub(cameraPos, temp, cameraPos);
-		//cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-	}
+		ProcessKeyboard("LEFT", deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-	{
-		glm_vec_cross(cameraFront, cameraUp, temp2);
-		glm_vec_normalize(temp2);
-		glm_vec_mulv(cam_speed, temp2, temp);
-		glm_vec_add(cameraPos, temp, cameraPos);
-		//cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-	}
-	//if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-	//{
-	//	mixValue += 0.001f; // change this value accordingly (might be too slow or too fast based on system hardware)
-	//	if (mixValue >= 1.0f)
-	//		mixValue = 1.0f;
-	//}
-	//if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-	//{
-	//	mixValue -= 0.001f; // change this value accordingly (might be too slow or too fast based on system hardware)
-	//	if (mixValue <= 0.0f)
-	//		mixValue = 0.0f;
-	//}
+		ProcessKeyboard("RIGHT", deltaTime);
 
 }
 
@@ -395,32 +325,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastX = xpos;
 	lastY = ypos;
 
-	float sensitivity = 0.1f; // change this value to your liking
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw += xoffset;
-	pitch += yoffset;
-
-	// make sure that when pitch is out of bounds, screen doesn't get flipped
-	if (pitch > 89.0f)
-		pitch = 89.0f;
-	if (pitch < -89.0f)
-		pitch = -89.0f;
-
-	vec3 front{ cos(glm_rad(yaw)) * cos(glm_rad(pitch)),  sin(glm_rad(pitch)),sin(glm_rad(yaw)) * cos(glm_rad(pitch)) };
-	glm_vec_normalize(front);
-	glm_vec_copy(front, cameraFront);
+	ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	if (fov >= 1.0f && fov <= 45.0f)
-		fov -= yoffset;
-	if (fov <= 1.0f)
-		fov = 1.0f;
-	if (fov >= 45.0f)
-		fov = 45.0f;
+	ProcessMouseScroll(yoffset);
 }
+

@@ -23,7 +23,7 @@ const float SENSITIVTY = 0.1f;
 const float ZOOM = 45.0f;
 // Camera Attributes
 vec3 Position;
-vec3 Front;
+vec3 Front= { 0.0f, 0.0f, -1.0f };
 vec3 Up;
 vec3 Right;
 vec3 WorldUp;
@@ -34,23 +34,33 @@ float Pitch;
 float MovementSpeed;
 float MouseSensitivity;
 float Zoom;
+void updateCameraVectors();
+
+float fov_back()
+{
+	return Zoom;
+}
 
 void Camera(vec3 position,vec3 up,float yaw,float pitch)
 {
-	Front = { 0.0f, 0.0f, -1.0f };
-	MovementSpeed = SPEED, MouseSensitivity = SENSITIVTY, Zoom = ZOOM;
-	Position = position;
-	WorldUp = up;
+	MovementSpeed = SPEED; 
+	MouseSensitivity = SENSITIVTY;
+	Zoom = ZOOM;
+	glm_vec_copy(position, Position);
+	glm_vec_copy(up,WorldUp);
 	Yaw = yaw;
 	Pitch = pitch;
 	updateCameraVectors();
 }
 void UCamera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch)
 {
-	Front = { 0.0f, 0.0f, -1.0f };
-	MovementSpeed = SPEED, MouseSensitivity = SENSITIVTY, Zoom = ZOOM;
-	Position = { posX, posY, posZ };
-	WorldUp = { upX, upY, upZ };
+	vec3 up = { upX, upY, upZ };
+	vec3 position = { posX, posY, posZ };
+	MovementSpeed = SPEED;
+	MouseSensitivity = SENSITIVTY;
+	Zoom = ZOOM;
+	glm_vec_copy(position, Position);
+	glm_vec_copy(up, WorldUp);
 	Yaw = yaw;
 	Pitch = pitch;
 	updateCameraVectors();
@@ -58,40 +68,44 @@ void UCamera(float posX, float posY, float posZ, float upX, float upY, float upZ
 
 void GetViewMatrix(mat4 dest)
 {//直接参数返回观察矩阵
-	glm_lookat(Position, Position + Front, Up, dest);
+	vec3 temp;
+	glm_vec_add(Position, Front, temp);
+	glm_lookat(Position,temp, Up, dest);
 }
 
-void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+void ProcessKeyboard(char * direction, float deltaTime)
 {
 	float velocity = MovementSpeed * deltaTime;
 	vec3 velocity_vec = { velocity ,velocity ,velocity };
 	vec3 t;
-	if (direction == FORWARD)
+	
+	if ( strcmp(direction,"FORWARD")==0 )
 	{
-		glm_vec_mulv(Front, velocity, t);
+		glm_vec_mulv(Front, velocity_vec, t);
 		glm_vec_add(Position, t, Position);
 	}
-	if (direction == BACKWARD)
+	
+	if (strcmp(direction, "BACKWARD") == 0)
 	{
-		glm_vec_mulv(Front, velocity, t);
+		glm_vec_mulv(Front, velocity_vec, t);
 		glm_vec_sub(Position, t, Position);
 	}
-	if (direction == LEFT)
+	if (strcmp(direction, "LEFT") == 0)
 	{
-		glm_vec_mulv(Right, velocity, t);
+		glm_vec_mulv(Right, velocity_vec, t);
 		glm_vec_sub(Position, t, Position);
 		//Position -= Right * velocity;
 	}
-	if (direction == RIGHT)
+	if (strcmp(direction, "RIGHT") == 0)
 	{
-		glm_vec_mulv(Right, velocity, t);
+		glm_vec_mulv(Right, velocity_vec, t);
 		glm_vec_add(Position, t, Position);
 		//Position += Right * velocity;
 	}
 }
 
 // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true)
+void ProcessMouseMovement(float xoffset, float yoffset,GLboolean constrainPitch = true)
 {
 	xoffset *= MouseSensitivity;
 	yoffset *= MouseSensitivity;
@@ -126,8 +140,7 @@ void ProcessMouseScroll(float yoffset)
 void updateCameraVectors()
 {
 	// Calculate the new Front vector
-	vec3 front;
-	front{cos(glm::radians(Yaw)) * cos(glm::radians(Pitch),sin(glm::radians(Pitch)),sin(glm::radians(Yaw)) * cos(glm::radians(Pitch)));
+	vec3 front = { cos(glm_rad(Yaw)) * cos(glm_rad(Pitch)),  sin(glm_rad(Pitch)),sin(glm_rad(Yaw)) * cos(glm_rad(Pitch)) };
 	glm_vec_normalize(front);
 	glm_vec_copy(front, Front);
 	// Also re-calculate the Right and Up vector
